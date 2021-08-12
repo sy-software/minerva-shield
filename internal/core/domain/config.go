@@ -35,6 +35,13 @@ func (t *Token) KeyPair() (*rsa.PrivateKey, error) {
 	return pk, nil
 }
 
+type TokenValidator string
+
+const (
+	ExternalTokenValidator TokenValidator = "external"
+	InternalTokenValidator TokenValidator = "internal"
+)
+
 // Route represents a resource accessible behind shield layer
 type Route struct {
 	// The internal resource path
@@ -44,7 +51,7 @@ type Route struct {
 	// The internal resource scheme
 	Scheme string `json:"scheme"`
 	// If set will try to validate the token with the specified validator
-	TokenValidator *string `json:"tokenValidator"`
+	TokenValidator *TokenValidator `json:"tokenValidator"`
 	// If set, will verify the token "use" claim against this value
 	TokenUse *string `json:"tokenUse,omitempty"`
 }

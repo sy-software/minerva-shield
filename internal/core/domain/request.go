@@ -5,6 +5,8 @@ import "net/http"
 // Headers set by this layer
 const (
 	REQUEST_ID_HEADER string = "X-REQUEST-ID"
+	USER_INFO_HEADER  string = "X-USER-INFO"
+	TOKE_USE_HEADER   string = "X-TOKEN-USE"
 )
 
 // Request representation to be evaluated or executed by proxy
