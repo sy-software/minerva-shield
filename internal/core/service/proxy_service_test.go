@@ -272,6 +272,15 @@ func TestRouteWithAuthentication(t *testing.T) {
 			t.Errorf("Expected %q header to be set", domain.REQUEST_ID_HEADER)
 		}
 
+		tokenUse := got.Headers.Get(domain.TOKE_USE_HEADER)
+		if tokenUse == "" {
+			t.Errorf("Expected %q header to be set", domain.TOKE_USE_HEADER)
+		}
+
+		if tokenUse != use {
+			t.Errorf("Expected token use to be: %q got: %q", use, tokenUse)
+		}
+
 		userInfoStr := got.Headers.Get(domain.USER_INFO_HEADER)
 		if userInfoStr == "" {
 			t.Errorf("Expected %q header to be set", domain.USER_INFO_HEADER)
@@ -389,6 +398,15 @@ func TestRouteWithAuthentication(t *testing.T) {
 		requestId := got.Headers.Get(domain.REQUEST_ID_HEADER)
 		if requestId == "" {
 			t.Errorf("Expected %q header to be set", domain.REQUEST_ID_HEADER)
+		}
+
+		tokenUse := got.Headers.Get(domain.TOKE_USE_HEADER)
+		if tokenUse == "" {
+			t.Errorf("Expected %q header to be set", domain.TOKE_USE_HEADER)
+		}
+
+		if tokenUse != use {
+			t.Errorf("Expected token use to be: %q got: %q", use, tokenUse)
 		}
 
 		userInfoStr := got.Headers.Get(domain.USER_INFO_HEADER)

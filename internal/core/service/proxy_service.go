@@ -80,6 +80,7 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 
 		if route.TokenUse != nil {
 			userInfo, err = proxy.internalValidator.ValidateUse(token, *route.TokenUse)
+			newHeaders.Set(domain.TOKE_USE_HEADER, *route.TokenUse)
 		} else {
 			userInfo, err = proxy.internalValidator.Validate(token)
 		}
@@ -87,7 +88,6 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 		if err != nil {
 			return request, ErrUnauthorized
 		}
-
 	}
 
 	userBytes, err := json.Marshal(userInfo)
