@@ -1,6 +1,17 @@
 package ports
 
-import "github.com/sy-software/minerva-shield/internal/core/domain"
+import (
+	"errors"
+
+	"github.com/sy-software/minerva-shield/internal/core/domain"
+)
+
+var (
+	ErrExpiredToken    = errors.New("expired_token")
+	ErrInvalidToken    = errors.New("invalid_token")
+	ErrNoUsrInToken    = errors.New("no_user_in_token")
+	ErrInvalidTokenUse = errors.New("invalid_token_use")
+)
 
 // APIProxy is a reverse proxy server
 type APIProxy interface {

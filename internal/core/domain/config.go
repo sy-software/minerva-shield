@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/rs/zerolog/log"
-	mCrypto "github.com/sy-software/minerva-go-utils/crypto"
+	"github.com/sy-software/minerva-go-utils/crypto"
 )
 
 // Token contains the required settings to manipulate auth tokens
@@ -25,7 +25,7 @@ func (t *Token) KeyPair() (*rsa.PrivateKey, error) {
 		return t.rsaKey, nil
 	}
 
-	pk, err := mCrypto.StrToPrivateKey(t.PrivateKey, t.PublicKey)
+	pk, err := crypto.StrToPrivateKey(t.PrivateKey, t.PublicKey)
 
 	if err != nil {
 		return nil, err
@@ -66,6 +66,8 @@ type Config struct {
 	Port string `json:"port,omitempty"`
 	// A map between external resources to the internal resources
 	RouteTable map[string]Route `json:"routeTable,omitempty"`
+	// Base64 Encoded Firebase JSON credentials file
+	Firebase string `json:"firebase"`
 }
 
 // DefaultConfig returns a configuration object with the default values
