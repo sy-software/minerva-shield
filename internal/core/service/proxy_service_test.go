@@ -1,11 +1,14 @@
 package service
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -272,9 +275,9 @@ func TestRouteWithAuthentication(t *testing.T) {
 			t.Errorf("Expected %q header to be set", domain.REQUEST_ID_HEADER)
 		}
 
-		tokenUse := got.Headers.Get(domain.TOKE_USE_HEADER)
+		tokenUse := got.Headers.Get(domain.TOKEN_USE_HEADER)
 		if tokenUse == "" {
-			t.Errorf("Expected %q header to be set", domain.TOKE_USE_HEADER)
+			t.Errorf("Expected %q header to be set", domain.TOKEN_USE_HEADER)
 		}
 
 		if tokenUse != use {
@@ -400,9 +403,9 @@ func TestRouteWithAuthentication(t *testing.T) {
 			t.Errorf("Expected %q header to be set", domain.REQUEST_ID_HEADER)
 		}
 
-		tokenUse := got.Headers.Get(domain.TOKE_USE_HEADER)
+		tokenUse := got.Headers.Get(domain.TOKEN_USE_HEADER)
 		if tokenUse == "" {
-			t.Errorf("Expected %q header to be set", domain.TOKE_USE_HEADER)
+			t.Errorf("Expected %q header to be set", domain.TOKEN_USE_HEADER)
 		}
 
 		if tokenUse != use {
@@ -429,6 +432,106 @@ func TestRouteWithAuthentication(t *testing.T) {
 
 		if !cmp.Equal(expected, userInfo) {
 			t.Errorf("Expected user info to be: %+v got: %+v", expected, userInfo)
+		}
+	})
+}
+
+func TestRequestValuesArePassed(t *testing.T) {
+	route := domain.Route{
+		Path:           "my/path",
+		Host:           "internal.api",
+		Scheme:         "http",
+		TokenValidator: nil,
+		TokenUse:       nil,
+	}
+	config := domain.DefaultConfig()
+	config.RouteTable["my/path"] = route
+
+	validator := mocks.TokenValidator{
+		ValidateInterceptor: func(token string) (domain.User, error) {
+			return domain.User{}, errors.New("Validator should not be called")
+		},
+	}
+
+	t.Run("Test internal headers can't be overridden", func(t *testing.T) {
+		headerValue := "MaliciousUseHeader"
+		forwardHeader := "X-FORWARDED-FOR"
+		request := domain.Request{
+			Scheme: "https",
+			Host:   "external.api",
+			Path:   "my/path",
+			Headers: http.Header{
+				domain.TOKEN_USE_HEADER:  []string{headerValue},
+				domain.USER_INFO_HEADER:  []string{headerValue},
+				domain.REQUEST_ID_HEADER: []string{headerValue},
+				forwardHeader:            []string{"127.0.0.2"},
+			},
+		}
+
+		service := NewProxyService(&config, &validator, &validator)
+		got, err := service.Authorize(request)
+
+		if err != nil {
+			t.Errorf("Expected authorize without error, got: %v", err)
+		}
+
+		requestId := got.Headers.Get(domain.REQUEST_ID_HEADER)
+		if requestId == "" {
+			t.Errorf("Expected %q header to be set", domain.REQUEST_ID_HEADER)
+		}
+
+		if requestId == headerValue {
+			t.Errorf("Expected %q header to not be: %q", domain.REQUEST_ID_HEADER, headerValue)
+		}
+
+		tokenUse := got.Headers[domain.TOKEN_USE_HEADER]
+		if len(tokenUse) != 0 {
+			t.Errorf("Expected %q header to not be set, got: %v", domain.TOKEN_USE_HEADER, tokenUse)
+		}
+
+		userInfo := got.Headers[domain.USER_INFO_HEADER]
+		if len(userInfo) != 0 {
+			t.Errorf("Expected %q header to not be set, got: %v", domain.USER_INFO_HEADER, userInfo)
+		}
+
+		forwarded := got.Headers[forwardHeader]
+		if len(forwarded) != 1 {
+			t.Errorf("Expected %q header to be set, got: %v", forwardHeader, forwarded)
+		}
+
+		if forwarded[0] != "127.0.0.2" {
+			t.Errorf("Expected %q to be: %q got: %q", forwardHeader, "127.0.0.2", forwarded[0])
+		}
+	})
+
+	t.Run("Test internal headers can't be overridden", func(t *testing.T) {
+		body := "body_contents"
+		request := domain.Request{
+			Scheme:  "https",
+			Host:    "external.api",
+			Path:    "my/path",
+			Method:  domain.HTTP_GET,
+			Query:   "p=1&p=2",
+			Body:    io.NopCloser(strings.NewReader(body)),
+			Headers: http.Header{},
+		}
+
+		service := NewProxyService(&config, &validator, &validator)
+		got, err := service.Authorize(request)
+
+		if err != nil {
+			t.Errorf("Expected authorize without error, got: %v", err)
+		}
+
+		if got.Method != request.Method {
+			t.Errorf("Expected HTTP method to be: %q, got: %q", request.Method, got.Method)
+		}
+
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(got.Body)
+		gotBody := buf.String()
+		if gotBody != body {
+			t.Errorf("Expected body to be: %q got: %q", body, gotBody)
 		}
 	})
 }

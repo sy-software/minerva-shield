@@ -20,6 +20,12 @@ var (
 	ErrInternalServer    = errors.New("internal_server_error")
 )
 
+var RESERVED_HEADERS = []string{
+	domain.REQUEST_ID_HEADER,
+	domain.USER_INFO_HEADER,
+	domain.TOKEN_USE_HEADER,
+}
+
 type ProxyService struct {
 	config            *domain.Config
 	externalValidator ports.TokenValidator
@@ -45,6 +51,13 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 	}
 
 	newHeaders := request.Headers
+
+	// Clear all reserved headers
+	// TODO: Apply header allow list to remove any extraneous header
+	for _, header := range RESERVED_HEADERS {
+		delete(newHeaders, header)
+	}
+
 	newHeaders.Add(domain.REQUEST_ID_HEADER, uuid.New().String())
 
 	// Authorization not required
@@ -54,6 +67,9 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 			Path:    route.Path,
 			Scheme:  route.Scheme,
 			Headers: newHeaders,
+			Query:   request.Query,
+			Body:    request.Body,
+			Method:  request.Method,
 		}, nil
 	}
 
@@ -80,7 +96,7 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 
 		if route.TokenUse != nil {
 			userInfo, err = proxy.internalValidator.ValidateUse(token, *route.TokenUse)
-			newHeaders.Set(domain.TOKE_USE_HEADER, *route.TokenUse)
+			newHeaders.Set(domain.TOKEN_USE_HEADER, *route.TokenUse)
 		} else {
 			userInfo, err = proxy.internalValidator.Validate(token)
 		}
@@ -103,5 +119,8 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 		Path:    route.Path,
 		Scheme:  route.Scheme,
 		Headers: newHeaders,
+		Query:   request.Query,
+		Body:    request.Body,
+		Method:  request.Method,
 	}, nil
 }
