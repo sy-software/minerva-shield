@@ -40,7 +40,7 @@ func TestRouteWithoutAuthentication(t *testing.T) {
 		},
 	}
 
-	service := NewProxyService(&config, &validator, &validator)
+	service := NewProxyService(&config, &mocks.ApiProxy{}, &validator, &validator)
 	got, err := service.Authorize(request)
 
 	if err != nil {
@@ -126,6 +126,7 @@ func TestRouteWithAuthentication(t *testing.T) {
 
 		service := NewProxyService(
 			&config,
+			&mocks.ApiProxy{},
 			&externalValidator,
 			&internalValidator,
 		)
@@ -245,6 +246,7 @@ func TestRouteWithAuthentication(t *testing.T) {
 
 		service := NewProxyService(
 			&config,
+			&mocks.ApiProxy{},
 			&externalValidator,
 			&internalValidator,
 		)
@@ -373,6 +375,7 @@ func TestRouteWithAuthentication(t *testing.T) {
 
 		service := NewProxyService(
 			&config,
+			&mocks.ApiProxy{},
 			&externalValidator,
 			&internalValidator,
 		)
@@ -468,7 +471,7 @@ func TestRequestValuesArePassed(t *testing.T) {
 			},
 		}
 
-		service := NewProxyService(&config, &validator, &validator)
+		service := NewProxyService(&config, &mocks.ApiProxy{}, &validator, &validator)
 		got, err := service.Authorize(request)
 
 		if err != nil {
@@ -516,7 +519,7 @@ func TestRequestValuesArePassed(t *testing.T) {
 			Headers: http.Header{},
 		}
 
-		service := NewProxyService(&config, &validator, &validator)
+		service := NewProxyService(&config, &mocks.ApiProxy{}, &validator, &validator)
 		got, err := service.Authorize(request)
 
 		if err != nil {
@@ -581,12 +584,13 @@ func TestUnknownRoute(t *testing.T) {
 
 	service := NewProxyService(
 		&config,
+		&mocks.ApiProxy{},
 		&externalValidator,
 		&internalValidator,
 	)
 	_, err := service.Authorize(request)
 
-	if err != ErrNotFound {
-		t.Errorf("Expected error to be: %v got: %v", ErrNotFound, err)
+	if err != domain.ErrNotFound {
+		t.Errorf("Expected error to be: %v got: %v", domain.ErrNotFound, err)
 	}
 }

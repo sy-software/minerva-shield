@@ -39,3 +39,8 @@ type Request struct {
 	// The resource Headers map
 	Headers http.Header
 }
+
+// Proxy configured and ready to serve a response
+type Proxy interface {
+	ServeHTTP(rw http.ResponseWriter, req *http.Request)
+}

@@ -9,7 +9,6 @@ import (
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
 	"github.com/sy-software/minerva-shield/internal/core/domain"
-	"github.com/sy-software/minerva-shield/internal/core/ports"
 	"google.golang.org/api/option"
 )
 
@@ -54,7 +53,7 @@ func (val *FirebaseTokenValidator) ValidateUse(token string, use string) (domain
 func (val *FirebaseTokenValidator) validate(token string, use *string) (domain.User, error) {
 	tokenDecoded, err := val.firebaseAuth.VerifyIDToken(context.Background(), token)
 	if err != nil {
-		return domain.User{}, ports.ErrInvalidToken
+		return domain.User{}, domain.ErrInvalidToken
 	}
 
 	// TODO: check if this data is always present

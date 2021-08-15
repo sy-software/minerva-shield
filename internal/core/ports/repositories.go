@@ -1,22 +1,13 @@
 package ports
 
 import (
-	"errors"
-
 	"github.com/sy-software/minerva-shield/internal/core/domain"
-)
-
-var (
-	ErrExpiredToken    = errors.New("expired_token")
-	ErrInvalidToken    = errors.New("invalid_token")
-	ErrNoUsrInToken    = errors.New("no_user_in_token")
-	ErrInvalidTokenUse = errors.New("invalid_token_use")
 )
 
 // APIProxy is a reverse proxy server
 type APIProxy interface {
 	// Call passes the request into the destination server
-	Call(request domain.Request) error
+	Call(request domain.Request) (domain.Proxy, error)
 }
 
 // TokenValidator validates an authentication token

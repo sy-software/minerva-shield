@@ -7,7 +7,6 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/rs/zerolog/log"
 	"github.com/sy-software/minerva-shield/internal/core/domain"
-	"github.com/sy-software/minerva-shield/internal/core/ports"
 )
 
 type MinervaTokenValidator struct {
@@ -55,28 +54,28 @@ func (val *MinervaTokenValidator) validate(token string, use *string) (domain.Us
 		log.Debug().Err(err).Msg("Token validation error:")
 		// Token is expired
 		if err.Error() == "exp not satisfied" {
-			return domain.User{}, ports.ErrExpiredToken
+			return domain.User{}, domain.ErrExpiredToken
 		} else if err.Error() == "use not satisfied" {
-			return domain.User{}, ports.ErrInvalidTokenUse
+			return domain.User{}, domain.ErrInvalidTokenUse
 		} else {
-			return domain.User{}, ports.ErrInvalidToken
+			return domain.User{}, domain.ErrInvalidToken
 		}
 	}
 
 	userMap, ok := decoded.Get("user")
 	if !ok {
-		return domain.User{}, ports.ErrNoUsrInToken
+		return domain.User{}, domain.ErrNoUsrInToken
 	}
 
 	// TODO: Find a more efficient way
 	userBytes, err := json.Marshal(userMap)
 	if err != nil {
-		return domain.User{}, ports.ErrNoUsrInToken
+		return domain.User{}, domain.ErrNoUsrInToken
 	}
 	var user domain.User
 	err = json.Unmarshal(userBytes, &user)
 	if err != nil {
-		return domain.User{}, ports.ErrNoUsrInToken
+		return domain.User{}, domain.ErrNoUsrInToken
 	}
 
 	return user, nil

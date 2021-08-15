@@ -8,4 +8,6 @@ import (
 type ProxyService interface {
 	// Authorize checks if a request is authorized to access a resource
 	Authorize(request domain.Request) (domain.Request, error)
+	// Pass creates a proxy to call a request
+	Pass(request domain.Request) (domain.Proxy, error)
 }

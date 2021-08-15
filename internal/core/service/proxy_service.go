@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"regexp"
 
 	"github.com/google/uuid"
@@ -13,13 +12,6 @@ import (
 
 const BEARER_REGEX = "^Bearer (.+)$"
 
-var (
-	ErrNotFound          = errors.New("not_found")
-	ErrInvalidAuthHeader = errors.New("invalid_auth_header")
-	ErrUnauthorized      = errors.New("unauthorized")
-	ErrInternalServer    = errors.New("internal_server_error")
-)
-
 var RESERVED_HEADERS = []string{
 	domain.REQUEST_ID_HEADER,
 	domain.USER_INFO_HEADER,
@@ -28,16 +20,19 @@ var RESERVED_HEADERS = []string{
 
 type ProxyService struct {
 	config            *domain.Config
+	proxy             ports.APIProxy
 	externalValidator ports.TokenValidator
 	internalValidator ports.TokenValidator
 }
 
 func NewProxyService(
 	config *domain.Config,
+	proxy ports.APIProxy,
 	externalValidator ports.TokenValidator,
 	internalValidator ports.TokenValidator) *ProxyService {
 	return &ProxyService{
 		config:            config,
+		proxy:             proxy,
 		externalValidator: externalValidator,
 		internalValidator: internalValidator,
 	}
@@ -47,7 +42,7 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 	route, ok := proxy.config.RouteTable[request.Path]
 
 	if !ok {
-		return request, ErrNotFound
+		return request, domain.ErrNotFound
 	}
 
 	newHeaders := request.Headers
@@ -78,7 +73,7 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 
 	re := regexp.MustCompile(BEARER_REGEX)
 	if !re.MatchString(token) {
-		return request, ErrInvalidAuthHeader
+		return request, domain.ErrInvalidAuthHeader
 	}
 
 	groups := re.FindStringSubmatch(token)
@@ -90,7 +85,7 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 		userInfo, err = proxy.externalValidator.Validate(token)
 
 		if err != nil {
-			return request, ErrUnauthorized
+			return request, domain.ErrUnauthorized
 		}
 	} else if *route.TokenValidator == domain.InternalTokenValidator {
 
@@ -102,14 +97,14 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 		}
 
 		if err != nil {
-			return request, ErrUnauthorized
+			return request, domain.ErrUnauthorized
 		}
 	}
 
 	userBytes, err := json.Marshal(userInfo)
 
 	if err != nil {
-		return request, ErrInternalServer
+		return request, domain.ErrInternalServer
 	}
 
 	newHeaders.Set(domain.USER_INFO_HEADER, base64.StdEncoding.EncodeToString(userBytes))
@@ -123,4 +118,8 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 		Body:    request.Body,
 		Method:  request.Method,
 	}, nil
+}
+
+func (service *ProxyService) Pass(request domain.Request) (domain.Proxy, error) {
+	return service.proxy.Call(request)
 }
