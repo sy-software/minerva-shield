@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/rs/zerolog/log"
 	"github.com/sy-software/minerva-shield/internal/core/domain"
 )
 
@@ -29,6 +30,11 @@ func (caller *ProxyCaller) Call(request domain.Request) (domain.Proxy, error) {
 
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 
+	proxy.ErrorHandler = func(rw http.ResponseWriter, r *http.Request, e error) {
+		log.Error().Err(e).
+			Strs(domain.REQUEST_ID_HEADER, request.Headers[domain.REQUEST_ID_HEADER]).
+			Msg("Error from underlying server:")
+	}
 	proxy.Director = func(req *http.Request) {
 		// TODO: Log requests
 		// b, _ := ioutil.ReadAll(req.Body)

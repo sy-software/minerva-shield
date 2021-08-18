@@ -8,6 +8,7 @@ import (
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
+	"github.com/rs/zerolog/log"
 	"github.com/sy-software/minerva-shield/internal/core/domain"
 	"google.golang.org/api/option"
 )
@@ -53,6 +54,7 @@ func (val *FirebaseTokenValidator) ValidateUse(token string, use string) (domain
 func (val *FirebaseTokenValidator) validate(token string, use *string) (domain.User, error) {
 	tokenDecoded, err := val.firebaseAuth.VerifyIDToken(context.Background(), token)
 	if err != nil {
+		log.Error().Err(err).Msgf("Firebase token validation:")
 		return domain.User{}, domain.ErrInvalidToken
 	}
 

@@ -6,6 +6,7 @@ import (
 	"regexp"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"github.com/sy-software/minerva-shield/internal/core/domain"
 	"github.com/sy-software/minerva-shield/internal/core/ports"
 )
@@ -53,7 +54,8 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 		delete(newHeaders, header)
 	}
 
-	newHeaders.Add(domain.REQUEST_ID_HEADER, uuid.New().String())
+	reqId := uuid.New().String()
+	newHeaders.Add(domain.REQUEST_ID_HEADER, reqId)
 
 	// Authorization not required
 	if route.TokenUse == nil && route.TokenValidator == nil {
@@ -73,6 +75,7 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 
 	re := regexp.MustCompile(BEARER_REGEX)
 	if !re.MatchString(token) {
+		log.Error().Msgf("Invalid Authorization header: %s", token)
 		return request, domain.ErrInvalidAuthHeader
 	}
 
@@ -85,6 +88,7 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 		userInfo, err = proxy.externalValidator.Validate(token)
 
 		if err != nil {
+			log.Error().Err(err).Str(domain.REQUEST_ID_HEADER, reqId).Msg("Token vas not validated:")
 			return request, domain.ErrUnauthorized
 		}
 	} else if *route.TokenValidator == domain.InternalTokenValidator {
@@ -97,6 +101,7 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 		}
 
 		if err != nil {
+			log.Error().Err(err).Str(domain.REQUEST_ID_HEADER, reqId).Msg("Token vas not validated:")
 			return request, domain.ErrUnauthorized
 		}
 	}
@@ -104,6 +109,7 @@ func (proxy *ProxyService) Authorize(request domain.Request) (domain.Request, er
 	userBytes, err := json.Marshal(userInfo)
 
 	if err != nil {
+		log.Error().Err(err).Str(domain.REQUEST_ID_HEADER, reqId).Msg("Can't serialize user info:")
 		return request, domain.ErrInternalServer
 	}
 

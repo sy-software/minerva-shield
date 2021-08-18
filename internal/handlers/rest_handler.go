@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"github.com/sy-software/minerva-shield/internal/core/domain"
 	"github.com/sy-software/minerva-shield/internal/core/ports"
 )
@@ -32,6 +33,7 @@ func (handler *RestHandler) CallProxy(c *gin.Context) (domain.Request, error) {
 	})
 
 	if err != nil {
+		log.Error().Err(err).Msg("Request is not valid:")
 		code := errorToStatusCode(err)
 		if code == http.StatusInternalServerError {
 			c.JSON(code, gin.H{"error": "internal server error"})
@@ -42,9 +44,12 @@ func (handler *RestHandler) CallProxy(c *gin.Context) (domain.Request, error) {
 		return req, err
 	}
 
+	log.Info().Msg("Preparing call to underlaying service")
+	log.Debug().Msgf("New request: %+v", req)
 	proxy, err := handler.service.Pass(req)
 
 	if err != nil {
+		log.Error().Err(err).Strs(domain.REQUEST_ID_HEADER, req.Headers[domain.REQUEST_ID_HEADER]).Msg("Request is not valid:")
 		code := errorToStatusCode(err)
 		if code == http.StatusInternalServerError {
 			c.JSON(code, gin.H{"error": "internal server error"})
@@ -55,6 +60,7 @@ func (handler *RestHandler) CallProxy(c *gin.Context) (domain.Request, error) {
 		return req, err
 	}
 
+	log.Info().Msg("Calling underlaying service")
 	proxy.ServeHTTP(c.Writer, c.Request)
 
 	return req, nil

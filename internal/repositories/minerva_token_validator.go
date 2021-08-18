@@ -31,6 +31,7 @@ func (val *MinervaTokenValidator) validate(token string, use *string) (domain.Us
 	keys, err := val.config.Token.KeyPair()
 
 	if err != nil {
+		log.Error().Err(err).Msgf("Can't load JWT signature key pair:")
 		return domain.User{}, err
 	}
 
@@ -51,7 +52,7 @@ func (val *MinervaTokenValidator) validate(token string, use *string) (domain.Us
 	}
 
 	if err != nil {
-		log.Debug().Err(err).Msg("Token validation error:")
+		log.Error().Err(err).Msg("Token validation error:")
 		// Token is expired
 		if err.Error() == "exp not satisfied" {
 			return domain.User{}, domain.ErrExpiredToken
@@ -70,11 +71,13 @@ func (val *MinervaTokenValidator) validate(token string, use *string) (domain.Us
 	// TODO: Find a more efficient way
 	userBytes, err := json.Marshal(userMap)
 	if err != nil {
+		log.Error().Err(err).Msg("Can't serialize user info:")
 		return domain.User{}, domain.ErrNoUsrInToken
 	}
 	var user domain.User
 	err = json.Unmarshal(userBytes, &user)
 	if err != nil {
+		log.Error().Err(err).Msg("Can't serialize user info:")
 		return domain.User{}, domain.ErrNoUsrInToken
 	}
 

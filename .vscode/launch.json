@@ -10,7 +10,8 @@
             "request": "launch",
             "mode": "auto",
             "env": {
-                "CONFIG_FILE": "${workspaceFolder}/config.json"
+                "CONFIG_FILE": "${workspaceFolder}/config.json",
+                "CONFIG_SERVER": "http://localhost/config"
             },
             "program": "${workspaceFolder}/cmd/rest/server.go"
         }
