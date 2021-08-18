@@ -10,6 +10,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/lestrrat-go/jwx v1.2.5
 	github.com/rs/zerolog v1.23.0
-	github.com/sy-software/minerva-go-utils v0.0.0-20210809225732-ad0d2314ce94
+	github.com/sy-software/minerva-go-utils v0.0.0-20210818225928-36f6fc1f86fb
 	google.golang.org/api v0.52.0
 )
