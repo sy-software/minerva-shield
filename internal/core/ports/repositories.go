@@ -18,3 +18,9 @@ type TokenValidator interface {
 	// it also extracts user information
 	ValidateUse(token string, use string) (domain.User, error)
 }
+
+// ConfigRepository provides connection to our config server
+type ConfigRepository interface {
+	// Get connects to the configuration server and loads the config
+	Get() (domain.Config, error)
+}
